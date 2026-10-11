@@ -12,9 +12,9 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: AppColors.cream,
       colorScheme: const ColorScheme.light(
         surface: AppColors.surface,
-        primary: AppColors.forest,
+        primary: AppColors.green,
         onPrimary: Colors.white,
-        secondary: AppColors.sage,
+        secondary: AppColors.accent,
         onSurface: AppColors.textPrimary,
         outline: AppColors.border,
       ),
@@ -25,10 +25,7 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        titleTextStyle: AppText.display(
-          color: AppColors.forest,
-          fontSize: 24,
-        ),
+        titleTextStyle: AppText.title(fontSize: 22),
       ),
     );
   }

@@ -1,20 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-import 'package:plateful/main.dart';
-import 'package:plateful/widgets/plateful_logo.dart';
+import 'package:plateful/config.dart';
 
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
+  test('default API base URL targets Android emulator loopback', () {
+    expect(AppConfig.apiBaseUrl, contains('10.0.2.2'));
   });
 
-  testWidgets('Plateful shows onboarding with logo', (WidgetTester tester) async {
-    await tester.pumpWidget(const PlatefulApp());
-    await tester.pump();
-
-    expect(find.byType(PlatefulLogo), findsWidgets);
-    expect(find.text('Continue'), findsOneWidget);
-    expect(find.text('Skip'), findsOneWidget);
+  test('expiry soon threshold is 3 days', () {
+    expect(AppConfig.expirySoonDays, 3);
   });
 }

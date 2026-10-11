@@ -3,16 +3,15 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// App-wide type styles — Plus Jakarta Sans.
 abstract final class AppText {
   static TextStyle get _base => GoogleFonts.plusJakartaSans();
 
   static TextStyle display({
     Color color = AppColors.textPrimary,
-    double fontSize = 32,
+    double fontSize = 28,
     FontWeight fontWeight = FontWeight.w700,
-    double height = 1.15,
-    double letterSpacing = -0.4,
+    double height = 1.2,
+    double letterSpacing = -0.3,
   }) {
     return _base.copyWith(
       color: color,
@@ -25,9 +24,9 @@ abstract final class AppText {
 
   static TextStyle title({
     Color color = AppColors.textPrimary,
-    double fontSize = 22,
+    double fontSize = 20,
     FontWeight fontWeight = FontWeight.w700,
-    double height = 1.2,
+    double height = 1.25,
   }) {
     return _base.copyWith(
       color: color,

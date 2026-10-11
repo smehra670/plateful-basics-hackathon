@@ -1,9 +1,20 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+server/.env
+
+# Node backend
+server/node_modules/
+server/dist/
+
 # Miscellaneous
 *.class
 *.log
 *.pyc
 *.swp
 .DS_Store
+
 .atom/
 .build/
 .buildlog/

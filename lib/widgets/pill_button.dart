@@ -8,31 +8,28 @@ class PillButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onPressed,
-    this.filled = true,
     this.icon,
+    this.trailing,
   });
 
   final String label;
   final VoidCallback onPressed;
-  final bool filled;
   final IconData? icon;
+  final IconData? trailing;
 
   @override
   Widget build(BuildContext context) {
-    final bg = filled ? AppColors.forest : AppColors.sage;
-    final fg = filled ? Colors.white : AppColors.forestDeep;
-
     return SizedBox(
       width: double.infinity,
-      height: 54,
+      height: 56,
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: fg,
+          backgroundColor: AppColors.green,
+          foregroundColor: Colors.white,
           elevation: 0,
           shape: const StadiumBorder(),
-          textStyle: AppText.button(color: fg),
+          textStyle: AppText.button(),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -42,6 +39,10 @@ class PillButton extends StatelessWidget {
               const SizedBox(width: 8),
             ],
             Text(label),
+            if (trailing != null) ...[
+              const SizedBox(width: 8),
+              Icon(trailing, size: 18),
+            ],
           ],
         ),
       ),

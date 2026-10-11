@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -20,7 +21,7 @@ class PlatefulBottomNav extends StatelessWidget {
         color: AppColors.cream,
         boxShadow: [
           BoxShadow(
-            color: AppColors.forest.withValues(alpha: 0.06),
+            color: AppColors.green.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -34,26 +35,35 @@ class PlatefulBottomNav extends StatelessWidget {
             children: [
               Expanded(
                 child: _NavItem(
-                  label: 'AI',
-                  icon: Icons.auto_awesome_outlined,
-                  activeIcon: Icons.auto_awesome,
+                  label: 'AI Chef',
+                  icon: Icons.restaurant_menu_outlined,
+                  activeIcon: Icons.restaurant_menu,
                   selected: currentIndex == 0,
-                  onTap: () => onTap(0),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onTap(0);
+                  },
                 ),
               ),
               Expanded(
                 child: _CenterCameraItem(
                   selected: currentIndex == 1,
-                  onTap: () => onTap(1),
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    onTap(1);
+                  },
                 ),
               ),
               Expanded(
                 child: _NavItem(
-                  label: 'Saved',
-                  icon: Icons.bookmark_border_rounded,
-                  activeIcon: Icons.bookmark_rounded,
+                  label: 'My Pantry',
+                  icon: Icons.kitchen_outlined,
+                  activeIcon: Icons.kitchen,
                   selected: currentIndex == 2,
-                  onTap: () => onTap(2),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onTap(2);
+                  },
                 ),
               ),
             ],
@@ -81,7 +91,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.forest : AppColors.textMuted;
+    final color = selected ? AppColors.green : AppColors.textMuted;
 
     return InkWell(
       onTap: onTap,
@@ -96,8 +106,8 @@ class _NavItem extends StatelessWidget {
             Text(
               label,
               style: AppText.label(
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 color: color,
               ),
             ),
@@ -126,16 +136,23 @@ class _CenterCameraItem extends StatelessWidget {
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 56,
-            height: 56,
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
-              color: selected ? AppColors.forest : AppColors.sage,
+              color: selected ? AppColors.green : AppColors.greenSoft,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.green.withValues(alpha: 0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Icon(
-              Icons.photo_camera_outlined,
-              color: selected ? Colors.white : AppColors.forestDeep,
-              size: 24,
+              Icons.photo_camera_rounded,
+              color: selected ? Colors.white : AppColors.greenDeep,
+              size: 26,
             ),
           ),
         ],

@@ -1,39 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../screens/ai_screen.dart';
-import '../screens/camera_screen.dart';
-import '../screens/saved_lists_screen.dart';
+import '../screens/chef_screen.dart';
+import '../screens/pantry_screen.dart';
+import '../screens/scan_screen.dart';
+import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../widgets/plateful_bottom_nav.dart';
 
-class AppShell extends StatefulWidget {
+class AppShell extends StatelessWidget {
   const AppShell({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends State<AppShell> {
-  int _index = 0;
-
-  @override
   Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+
     return Scaffold(
       backgroundColor: AppColors.cream,
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(
-          index: _index,
-          children: const [
-            AiScreen(),
-            CameraScreen(),
-            SavedListsScreen(),
-          ],
-        ),
+      body: IndexedStack(
+        index: state.shellTabIndex,
+        children: const [
+          ChefScreen(),
+          ScanScreen(),
+          PantryScreen(),
+        ],
       ),
       bottomNavigationBar: PlatefulBottomNav(
-        currentIndex: _index,
-        onTap: (index) => setState(() => _index = index),
+        currentIndex: state.shellTabIndex,
+        onTap: (index) => context.read<AppState>().setShellTab(index),
       ),
     );
   }
