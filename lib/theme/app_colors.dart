@@ -5,10 +5,10 @@ abstract final class AppColors {
   static const cream = Color(0xFFFAF9F6);
   static const creamDark = Color(0xFFF0EEE8);
   static const surface = Color(0xFFFFFFFF);
-  static const green = Color(0xFF58775D);
-  static const greenDeep = Color(0xFF45634A);
-  static const greenSoft = Color(0xFFA8BFA5);
-  static const sageMuted = Color(0xFFE8F0E6);
+  static const green = Color(0xFF618564);
+  static const greenDeep = Color(0xFF4D6C52);
+  static const greenSoft = Color(0xFFB0C6AD);
+  static const sageMuted = Color(0xFFECF3EA);
   static const textPrimary = Color(0xFF232923);
   static const textSecondary = Color(0xFF858B82);
   static const textMuted = Color(0xFF858B82);
