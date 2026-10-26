@@ -6,6 +6,9 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../utils/expiry.dart';
+import '../widgets/expiry_badge.dart';
+import '../widgets/pantry_photo.dart';
 import 'recipe_detail_screen.dart';
 
 class IngredientDetailScreen extends StatefulWidget {
@@ -75,6 +78,23 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: SizedBox(
+              height: 180,
+              width: double.infinity,
+              child: PantryPhoto(path: item.imageUrl),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ExpiryBadge(
+              ingredient: item,
+              soonDays: state.expirySoonDays,
+            ),
+          ),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -83,8 +103,37 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
             ),
             child: Column(
               children: [
-                _row('Quantity remaining',
-                    '${_fmt(item.quantityRemaining)} ${item.unit}'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text('Quantity remaining', style: AppText.body()),
+                    ),
+                    IconButton(
+                      onPressed: item.quantityRemaining <= 0
+                          ? null
+                          : () => state.editIngredient(
+                                item.copyWith(
+                                  quantityRemaining:
+                                      (item.quantityRemaining - 1)
+                                          .clamp(0, 9999),
+                                ),
+                              ),
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                    Text(
+                      '${_fmt(item.quantityRemaining)} ${item.unit}',
+                      style: AppText.label(),
+                    ),
+                    IconButton(
+                      onPressed: () => state.editIngredient(
+                        item.copyWith(
+                          quantityRemaining: item.quantityRemaining + 1,
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
                 _row('Total consumed',
                     '${_fmt(item.totalQuantityUsed)} ${item.unit}'),
                 _row('Times used', '${item.timesUsed}'),
@@ -92,8 +141,9 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
                   'Expiry',
                   item.expiryDate == null
                       ? 'Not set'
-                      : DateFormat.yMMMd().format(item.expiryDate!),
+                      : '${DateFormat.yMMMd().format(item.expiryDate!)} · ${ExpiryInfo.label(item)}',
                 ),
+                _row('Stored in', item.storagePlace ?? 'Not set'),
               ],
             ),
           ),
@@ -111,6 +161,24 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
                 child: OutlinedButton(
                   onPressed: () => _editExpiry(context, state, item),
                   child: const Text('Edit expiry'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _editName(context, state, item),
+                  child: const Text('Edit name'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _editPlace(context, state, item),
+                  child: const Text('Edit place'),
                 ),
               ),
             ],
@@ -226,5 +294,63 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
     );
     if (picked == null) return;
     await state.editIngredient(item.copyWith(expiryDate: picked));
+  }
+
+  Future<void> _editName(
+    BuildContext context,
+    AppState state,
+    PantryIngredient item,
+  ) async {
+    final ctrl = TextEditingController(text: item.name);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Edit name'),
+        content: TextField(
+          controller: ctrl,
+          textCapitalization: TextCapitalization.sentences,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (result == null || result.isEmpty) return;
+    await state.editIngredient(item.copyWith(name: result));
+  }
+
+  Future<void> _editPlace(
+    BuildContext context,
+    AppState state,
+    PantryIngredient item,
+  ) async {
+    const places = ['Fridge', 'Freezer', 'Cupboard', 'Counter'];
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: places
+              .map(
+                (place) => ListTile(
+                  title: Text(place),
+                  onTap: () => Navigator.pop(ctx, place),
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+    if (picked == null) return;
+    await state.editIngredient(item.copyWith(storagePlace: picked));
   }
 }

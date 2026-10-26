@@ -47,6 +47,10 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Plateful uses the camera to add food to your pantry.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Plateful uses your photos to add food to your pantry.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

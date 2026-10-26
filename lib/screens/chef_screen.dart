@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_icons/phosphor_icons.dart';
 import 'package:provider/provider.dart';
 
+import '../models/models.dart';
 import '../state/app_state.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_typography.dart';
-import '../widgets/profile_avatar_button.dart';
-import '../widgets/recipe_card.dart';
+import '../utils/pantry_match.dart';
+import '../theme/app_theme.dart';
+import '../models/meal_plan.dart';
+import '../widgets/circle_icon_button.dart';
+import '../widgets/primary_button.dart';
+import '../widgets/recipe_photo.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/swipe_deck.dart';
+import 'course_select_screen.dart';
+import 'planner_setup_screen.dart';
 import 'recipe_detail_screen.dart';
 
 class ChefScreen extends StatelessWidget {
@@ -17,33 +23,15 @@ class ChefScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
 
-    return SafeArea(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 12, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Plateful', style: AppText.display(fontSize: 28)),
-                      Text(
-                        state.usingDemoPipeline
-                            ? 'Demo mode · Make more. Waste less.'
-                            : 'Let\'s make something delicious.',
-                        style: AppText.body(fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-                const ProfileAvatarButton(),
-              ],
-            ),
-          ),
-          Expanded(child: _buildBody(context, state)),
-        ],
+    return Scaffold(
+      backgroundColor: AppColors.ground,
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (!state.serverReachable) const _ServerBanner(),
+            Expanded(child: _buildBody(context, state)),
+          ],
+        ),
       ),
     );
   }
@@ -51,20 +39,31 @@ class ChefScreen extends StatelessWidget {
   Widget _buildBody(BuildContext context, AppState state) {
     switch (state.chefPhase) {
       case ChefPhase.loading:
-        return const RecipeSkeleton();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: CircleIconButton(
+                icon: PhosphorIconsRegular.arrowLeft,
+                semanticLabel: 'Back',
+                onTap: () => Navigator.of(context).maybePop(),
+              ),
+            ),
+            const Expanded(child: RecipeLoadingView(kind: LoadKind.recipes)),
+          ],
+        );
       case ChefPhase.swiping:
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-          child: SwipeDeck(
-            key: ValueKey(state.deck.map((r) => r.id).join('|')),
-            recipes: state.deck,
-            savedIds: state.savedIds,
-            currentIndex: state.swipeIndex,
-            onLike: state.likeCurrent,
-            onReject: state.rejectCurrent,
-            onUndo: state.undoSwipe,
-            onHeart: state.toggleSave,
-          ),
+        return SwipeDeck(
+          key: ValueKey(state.deck.map((r) => r.id).join('|')),
+          recipes: state.deck,
+          savedIds: state.savedIds,
+          currentIndex: state.swipeIndex,
+          onLike: state.likeCurrent,
+          onReject: state.rejectCurrent,
+          onUndo: state.undoSwipe,
+          onHeart: state.toggleSave,
+          expiringCount: (recipe) => _expiringUses(state, recipe),
         );
       case ChefPhase.results:
         return _ResultsView(state: state);
@@ -72,6 +71,17 @@ class ChefScreen extends StatelessWidget {
         return _IdleView(state: state);
     }
   }
+}
+
+int _expiringUses(AppState state, Recipe recipe) {
+  return state.useSoonIngredients
+      .where(
+        (item) => recipe.ingredients.any(
+          (ingredient) =>
+              ingredient.inPantry && pantryNamesMatch(ingredient.name, item.name),
+        ),
+      )
+      .length;
 }
 
 class _IdleView extends StatelessWidget {
@@ -82,75 +92,135 @@ class _IdleView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: const BoxDecoration(
-              color: AppColors.sageMuted,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.restaurant_menu,
-              size: 40,
-              color: AppColors.green,
-            ),
+          CircleIconButton(
+            icon: PhosphorIconsRegular.arrowLeft,
+            semanticLabel: 'Back',
+            onTap: () => Navigator.of(context).maybePop(),
           ),
-          const SizedBox(height: 24),
+          const Spacer(),
           Text(
-            'Your next meal starts here.',
-            textAlign: TextAlign.center,
-            style: AppText.display(fontSize: 26),
+            state.error == null ? 'No recipes yet.' : 'Couldn’t create recipes.',
+            style: AppText.h1Small(),
           ),
           const SizedBox(height: 10),
           Text(
-            'Scan what\'s in your kitchen, or cook with ingredients already in your pantry.',
-            textAlign: TextAlign.center,
+            state.error ??
+                'Pick a course from your pantry and we’ll write dishes around what you have.',
             style: AppText.body(),
           ),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => state.setShellTab(1),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.green,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+          const Spacer(),
+          PrimaryButton(
+            label: 'Try again',
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => const CourseSelectScreen(fromPantry: true),
                 ),
-              ),
-              child: Text('What\'s in your kitchen?', style: AppText.button()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: state.availableIngredients.isEmpty
-                  ? null
-                  : () => state.generateRecipesFromPantry(),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.green,
-                side: const BorderSide(color: AppColors.green),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              child: Text(
-                'Cook with my pantry',
-                style: AppText.button(color: AppColors.green),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
     );
   }
+}
+
+class _ServerBanner extends StatelessWidget {
+  const _ServerBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    return Material(
+      color: AppColors.roseSoft,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+        child: Row(
+          children: [
+            const Icon(
+              PhosphorIconsRegular.prohibit,
+              color: AppColors.roseText,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                state.reconnecting
+                    ? 'Checking Plateful server…'
+                    : 'Server offline. On PC run .\\start-plateful.ps1, keep USB in, then Retry.',
+                style: AppText.body(fontSize: 12, color: AppColors.roseText),
+              ),
+            ),
+            TextButton(
+              onPressed: state.reconnecting ? null : () => state.reconnectServer(),
+              child: Text(
+                'Retry',
+                style: AppText.label(color: AppColors.forest, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _addToPlan(BuildContext context, AppState state) async {
+  final plan = state.mealPlan;
+  if (plan == null || plan.days.isEmpty) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Create a meal plan first, then add these dishes.')),
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PlannerSetupScreen()),
+    );
+    return;
+  }
+  final slots = <PlannedMeal>[
+    for (final day in plan.days) ...day.meals,
+  ];
+  if (slots.isEmpty || !context.mounted) return;
+  final picked = await showModalBottomSheet<PlannedMeal>(
+    context: context,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (ctx) {
+      return SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Text('Add the first shortlisted dish to…', style: AppText.title(fontSize: 18)),
+            ),
+            for (final meal in slots)
+              ListTile(
+                title: Text('${meal.date} · ${meal.slot}'),
+                subtitle: Text(meal.recipe.title),
+                onTap: () => Navigator.pop(ctx, meal),
+              ),
+          ],
+        ),
+      );
+    },
+  );
+  if (picked == null || state.shortlist.isEmpty) return;
+  await state.placeOnPlan(
+    date: picked.date,
+    slot: picked.slot,
+    recipe: state.shortlist.first,
+  );
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('${state.shortlist.first.title} is on your plan.')),
+  );
 }
 
 class _ResultsView extends StatelessWidget {
@@ -162,99 +232,111 @@ class _ResultsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final picks = state.shortlist;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-          child: Text(
-            picks.isEmpty ? 'Nothing caught your eye?' : 'Your picks.',
-            style: AppText.display(fontSize: 28),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleIconButton(
+            icon: PhosphorIconsRegular.arrowLeft,
+            semanticLabel: 'Back',
+            onTap: () => Navigator.of(context).maybePop(),
           ),
-        ),
-        if (picks.isEmpty)
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(28),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'No worries — there\'s always another plate.',
-                    textAlign: TextAlign.center,
-                    style: AppText.body(),
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: () => state.generateRecipesFromPantry(),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.green,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
+          const SizedBox(height: 16),
+          Text(
+            picks.isEmpty
+                ? 'Nothing shortlisted'
+                : '${picks.length} dish${picks.length == 1 ? '' : 'es'} shortlisted',
+            style: AppText.h1(),
+          ),
+          const SizedBox(height: 16),
+          if (picks.isEmpty)
+            Expanded(
+              child: Text(
+                'No worries — there’s always another plate.',
+                style: AppText.body(),
+              ),
+            )
+          else
+            Expanded(
+              child: ListView.separated(
+                itemCount: picks.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final recipe = picks[index];
+                  return Material(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => RecipeDetailScreen(recipe: recipe),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: SizedBox(
+                                width: 64,
+                                height: 64,
+                                child: RecipePhoto.of(recipe),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                recipe.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.itemTitle(),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Remove from shortlist',
+                              onPressed: () =>
+                                  state.removeFromShortlist(recipe.id),
+                              icon: const Icon(
+                                PhosphorIconsRegular.x,
+                                size: 18,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    child: Text('Discover 5 more', style: AppText.button()),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
-          )
-        else
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.72,
-              ),
-              itemCount: picks.length,
-              itemBuilder: (context, index) {
-                final recipe = picks[index];
-                return RecipeGridCard(
-                  recipe: recipe,
-                  isSaved: state.savedIds.contains(recipe.id),
-                  onHeart: () => state.toggleSave(recipe),
-                  onRemove: () => state.removeFromShortlist(recipe.id),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => RecipeDetailScreen(recipe: recipe),
-                      ),
-                    );
-                  },
-                );
-              },
+          if (picks.isNotEmpty) ...[
+            PrimaryButton(
+              label: 'Add to plan',
+              onPressed: () => _addToPlan(context, state),
             ),
-          ),
-        if (picks.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => state.generateRecipesFromPantry(),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.green,
-                  side: const BorderSide(color: AppColors.green),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+            const SizedBox(height: 8),
+          ],
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const CourseSelectScreen(fromPantry: true),
                 ),
-                child: Text(
-                  'Discover 5 more',
-                  style: AppText.button(color: AppColors.green),
-                ),
+              ),
+              child: Text(
+                'Discover 5 more',
+                style: AppText.label(color: AppColors.forest),
               ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }

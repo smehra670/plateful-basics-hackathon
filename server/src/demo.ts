@@ -4,18 +4,11 @@ export const demoAnalyse: AnalyseResponse = {
   ingredients: [
     { name: 'Eggs', quantity: 6, unit: 'pcs', confidence: 0.95, needsClarification: false },
     { name: 'Tomatoes', quantity: 3, unit: 'pcs', confidence: 0.9, needsClarification: false },
-    { name: 'Spinach', quantity: 150, unit: 'g', confidence: 0.72, needsClarification: true },
+    { name: 'Spinach', quantity: 150, unit: 'g', confidence: 0.85, needsClarification: false },
     { name: 'Cheese', quantity: 100, unit: 'g', confidence: 0.88, needsClarification: false },
     { name: 'Bread', quantity: 4, unit: 'slices', confidence: 0.92, needsClarification: false },
   ],
-  questions: [
-    {
-      id: 'q_greens',
-      prompt: 'Is this spinach or kale?',
-      options: ['Spinach', 'Kale'],
-      allowOther: true,
-    },
-  ],
+  questions: [],
   isDemo: true,
 };
 
@@ -124,7 +117,7 @@ export function demoRecipes(pantryNames: string[]): GenerateRecipesResponse {
       id: 'srv-demo-5',
       name: 'Cheesy Vegetable Breakfast Bake',
       description: 'A one-dish bake of eggs, greens, tomatoes, and cheese.',
-      imageUrl: 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=800&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80',
       cookingTime: 35,
       difficulty: 'Easy',
       calories: 380,
@@ -148,7 +141,16 @@ export function demoRecipes(pantryNames: string[]): GenerateRecipesResponse {
   ].map((r) => {
     const missing = r.ingredients.filter((i) => !i.inPantry);
     const cost = missing.reduce((s, i) => s + i.estimatedCostGbp, 0);
-    return { ...r, estimatedAdditionalCost: cost };
+    return {
+      ...r,
+      sugar: 8,
+      fibre: 0,
+      imageSearchQuery: `${r.name} plated food dish`,
+      estimatedAdditionalCost: cost,
+      rescueLine: 'Cooks what is already in the kitchen.',
+      plating: 'Serve straight away.',
+      wasteTip: 'Box leftovers for lunch tomorrow.',
+    };
   }).filter((r) => r.ingredients.filter((i) => !i.inPantry).length <= 2);
 
   return { recipes: recipes.slice(0, 5), isDemo: true };

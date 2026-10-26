@@ -1,4 +1,5 @@
 import '../models/models.dart';
+import 'pantry_match.dart';
 
 /// Pure helpers for critical business rules (unit-tested).
 abstract final class RecipeConstraints {
@@ -30,9 +31,8 @@ abstract final class RecipeConstraints {
     List<PantryIngredient> pantry,
     String name,
   ) {
-    final key = normalizeName(name);
     for (final item in pantry) {
-      if (item.normalizedName == key) return item;
+      if (pantryNamesMatch(item.name, name)) return item;
     }
     return null;
   }

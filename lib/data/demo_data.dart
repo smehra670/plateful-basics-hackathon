@@ -21,8 +21,7 @@ abstract final class DemoData {
           name: 'Spinach',
           quantity: 150,
           unit: 'g',
-          confidence: 0.72,
-          needsClarification: true,
+          confidence: 0.85,
         ),
         DetectedIngredient(
           name: 'Cheese',
@@ -38,13 +37,7 @@ abstract final class DemoData {
         ),
       ];
 
-  static List<ClarificationQuestion> get sampleQuestions => const [
-        ClarificationQuestion(
-          id: 'q_greens',
-          prompt: 'Is this spinach or kale?',
-          options: ['Spinach', 'Kale'],
-        ),
-      ];
+  static List<ClarificationQuestion> get sampleQuestions => const [];
 
   static List<PantryIngredient> seedPantryIngredients() {
     final now = DateTime.now();

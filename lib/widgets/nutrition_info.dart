@@ -12,27 +12,19 @@ class NutritionInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.creamDark,
-        borderRadius: BorderRadius.circular(18),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            'Nutrition (estimates per serving)',
-            style: AppText.label(fontSize: 12, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _cell('${recipe.calories}', 'kcal'),
-              _cell('${recipe.protein.toStringAsFixed(0)}g', 'protein'),
-              _cell('${recipe.carbohydrates.toStringAsFixed(0)}g', 'carbs'),
-              _cell('${recipe.fat.toStringAsFixed(0)}g', 'fat'),
-            ],
-          ),
+          _cell('${recipe.calories}', 'kcal'),
+          _cell('${recipe.protein.toStringAsFixed(0)}g', 'protein'),
+          _cell('${recipe.carbohydrates.toStringAsFixed(0)}g', 'carbs'),
+          _cell('${recipe.fat.toStringAsFixed(0)}g', 'fat'),
+          _cell('${recipe.sugar.toStringAsFixed(0)}g', 'sugar'),
         ],
       ),
     );
@@ -42,9 +34,12 @@ class NutritionInfo extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(value, style: AppText.title(fontSize: 18)),
+          Text(value, style: AppText.title(fontSize: 16)),
           const SizedBox(height: 2),
-          Text(label, style: AppText.body(fontSize: 11)),
+          Text(
+            label,
+            style: AppText.body(fontSize: 10, color: AppColors.textSecondary),
+          ),
         ],
       ),
     );

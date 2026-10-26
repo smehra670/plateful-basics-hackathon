@@ -18,7 +18,7 @@ class AppDatabase {
     final path = p.join(dbPath, 'plateful.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE ingredients (
@@ -31,6 +31,7 @@ class AppDatabase {
             total_quantity_used REAL NOT NULL DEFAULT 0,
             image_url TEXT,
             estimated_unit_value_gbp REAL NOT NULL DEFAULT 0.3,
+            storage_place TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           )
@@ -47,6 +48,8 @@ class AppDatabase {
             protein REAL NOT NULL,
             carbohydrates REAL NOT NULL,
             fat REAL NOT NULL,
+            sugar REAL NOT NULL DEFAULT 0,
+            fibre REAL NOT NULL DEFAULT 0,
             servings INTEGER NOT NULL,
             estimated_additional_cost REAL NOT NULL,
             instructions_json TEXT NOT NULL,
@@ -89,6 +92,13 @@ class AppDatabase {
             recipe_id TEXT NOT NULL,
             timestamp TEXT NOT NULL,
             servings_prepared INTEGER NOT NULL,
+            calories INTEGER NOT NULL DEFAULT 0,
+            protein REAL NOT NULL DEFAULT 0,
+            carbohydrates REAL NOT NULL DEFAULT 0,
+            fat REAL NOT NULL DEFAULT 0,
+            fibre REAL NOT NULL DEFAULT 0,
+            title TEXT,
+            plan_key TEXT,
             FOREIGN KEY (recipe_id) REFERENCES recipes(id)
           )
         ''');
@@ -111,6 +121,54 @@ class AppDatabase {
             last_cooked_at TEXT NOT NULL
           )
         ''');
+        await db.execute('''
+          CREATE TABLE user_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+          )
+        ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'ALTER TABLE recipes ADD COLUMN sugar REAL NOT NULL DEFAULT 0',
+          );
+        }
+        if (oldVersion < 3) {
+          await db.execute('ALTER TABLE ingredients ADD COLUMN storage_place TEXT');
+        }
+        if (oldVersion < 4) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS user_settings (
+              key TEXT PRIMARY KEY,
+              value TEXT NOT NULL
+            )
+          ''');
+        }
+        if (oldVersion < 5) {
+          await db.execute(
+            'ALTER TABLE cooking_events ADD COLUMN calories INTEGER NOT NULL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE cooking_events ADD COLUMN protein REAL NOT NULL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE cooking_events ADD COLUMN carbohydrates REAL NOT NULL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE cooking_events ADD COLUMN fat REAL NOT NULL DEFAULT 0',
+          );
+          await db.execute('ALTER TABLE cooking_events ADD COLUMN title TEXT');
+          await db.execute('ALTER TABLE cooking_events ADD COLUMN plan_key TEXT');
+        }
+        if (oldVersion < 6) {
+          await db.execute(
+            'ALTER TABLE cooking_events ADD COLUMN fibre REAL NOT NULL DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE recipes ADD COLUMN fibre REAL NOT NULL DEFAULT 0',
+          );
+        }
       },
     );
   }
