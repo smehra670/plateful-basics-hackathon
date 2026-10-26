@@ -84,6 +84,15 @@ class AppState extends ChangeNotifier {
     await _api.checkHealth();
     usingDemoPipeline = _api.isDemoMode || !_api.openaiConfigured;
     preferences = await _settings.load();
+    if (preferences.displayName.trim().toLowerCase() == 'sam') {
+      preferences = preferences.copyWith(displayName: 'Shaurya');
+      await _settings.save(preferences);
+    }
+    final restocked = await _settings.loadJson('pantry_restock_v1');
+    if (restocked?['done'] != true) {
+      await _pantryService.restorePreviouslyUsed();
+      await _settings.saveJson('pantry_restock_v1', {'done': true});
+    }
     welcomeSeen = (await _settings.loadJson('welcome_v1'))?['seen'] == true;
     onboardingSeen = (await _settings.loadJson('onboarding_v1'))?['seen'] == true;
     final savedPlan = await _settings.loadJson('meal_plan');

@@ -116,6 +116,54 @@ class PantryService {
     );
   }
 
+  /// Puts used-up items back in stock. Keeps a future expiry, otherwise uses
+  /// the shelf life counted from the day the item was added.
+  Future<void> restorePreviouslyUsed() async {
+    final db = await _db.database;
+    final rows = await db.query(
+      'ingredients',
+      where: 'quantity_remaining <= 0',
+    );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    for (final row in rows) {
+      final item = PantryIngredient.fromMap(row);
+      final quantity = item.totalQuantityUsed > 0
+          ? item.totalQuantityUsed
+          : _restockQuantity(item.unit);
+      await db.update(
+        'ingredients',
+        item
+            .copyWith(
+              quantityRemaining: quantity,
+              expiryDate: _restockExpiry(item, today),
+              updatedAt: now,
+            )
+            .toMap(),
+        where: 'id = ?',
+        whereArgs: [item.id],
+      );
+    }
+  }
+
+  double _restockQuantity(String unit) {
+    final u = unit.trim().toLowerCase();
+    if (u == 'g' || u == 'ml' || u == 'gram' || u == 'grams') return 100;
+    return 1;
+  }
+
+  DateTime _restockExpiry(PantryIngredient item, DateTime today) {
+    DateTime day(DateTime value) =>
+        DateTime(value.year, value.month, value.day);
+    final existing = item.expiryDate;
+    if (existing != null && !day(existing).isBefore(today)) return existing;
+    final fromAdded = day(item.createdAt).add(
+      Duration(days: FoodFacts.shelfDays(item.name)),
+    );
+    if (!fromAdded.isBefore(today)) return fromAdded;
+    return today.add(Duration(days: FoodFacts.shelfDays(item.name)));
+  }
+
   Future<void> updateExpiry(String id, DateTime? expiry) async {
     final item = await getById(id);
     if (item == null) return;
